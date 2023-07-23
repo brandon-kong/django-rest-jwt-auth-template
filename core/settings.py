@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     'users',
     'rest_framework',
     'corsheaders',
+    'rest_framework_simplejwt.token_blacklist',
+    'rest_framework_simplejwt',
 
     'django.contrib.admin',
     'django.contrib.auth',
@@ -132,9 +134,25 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 # USER MODEL
+
 AUTH_USER_MODEL = 'users.User'
 
+
 # AUTH BACKENDS
+
 AUTHENTICATION_BACKENDS = [
     'users.backends.EmailBackend',
 ]
+
+
+# REST FRAMEWORK
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_PERMISSIONS': [
+        'rest_framework.permissions.AllowAny',
+    ],
+    
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication'
+    ],
+}
