@@ -1,5 +1,20 @@
 # Django Rest Framework JWT-Authentication Template
 
+This is a template for a Django Rest Framework project with JWT-Authentication.
+It is readily equipped with a user model and user authentication endpoints. Some other
+technologies used in this template are:
+
+- [Django Rest Framework](https://www.django-rest-framework.org/)
+- [Django Rest Framework Simple JWT](https://django-rest-framework-simplejwt.readthedocs.io/en/latest/)
+- [Django Rest Framework CORS Headers](https://pypi.org/project/django-cors-headers/)
+- [PostgreSQL](https://www.postgresql.org/)
+
+My goal for this template is to provide a starting point for future projects that require
+user authentication. I hope that this template will save me time in the future and I hope
+that it will be useful to others as well.
+
+If you have any suggestions or improvements, please feel free to open an issue or submit a pull request.
+
 ## Setup
 
 ### Clone the repository
