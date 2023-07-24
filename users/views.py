@@ -38,10 +38,13 @@ from .serializers import UserEmailSerializer, UserPhoneSerializer, PhoneTokenPai
 }
 """
 
-def index(request):
-    return Response({"message": "Hello, world!"})
-
 class HelloView(APIView):
+    def get(self, request):
+        return Response({"message": "Hello, world!"})
+    
+class ProtectedView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         return Response({"message": "Hello, world!"})
     
@@ -130,7 +133,7 @@ class CreateUserWithPhoneView(APIView):
                 })
             
             # TODO: Validate phone number
-            
+
             serializer = UserPhoneSerializer(data=data)
             if serializer.is_valid():
                 user = serializer.save()
@@ -153,6 +156,8 @@ class CreateUserWithPhoneView(APIView):
                 })
             
 class PhoneTokenObtainView(TokenObtainPairView):
+    permission_classes = [AllowAny]
+
     serializer_class = PhoneTokenPairSerializer
             
 

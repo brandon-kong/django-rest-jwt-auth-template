@@ -10,6 +10,8 @@ class UserTests(TestCase):
     phoneCreateUrl = '/users/create/phone'
     phoneLoginUrl = '/users/token/phone'
 
+    protectedUrl = '/users/protected'
+
     def test_create_user(self):
         """
         Ensure we can create a new user object.
@@ -349,4 +351,37 @@ class UserTests(TestCase):
 
         response = client.post(url, data, format='json')
         self.assertEqual(response.status_code, 401)
-        
+
+
+    def test_protected_view(self):
+        """
+        Tests that a user can access a protected view.
+        """
+        url = self.emailCreateUrl
+        data = {
+            'email': 'hi@gmail.com',
+            'password': 'abc123',
+        }
+
+        response = client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'access')
+        self.assertContains(response, 'refresh')
+
+        data = response.json()
+        detail = data.get('detail')
+        access_token = detail.get('access')
+
+        url = self.protectedUrl
+
+        # No Authorization header
+        response = client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 401)
+
+        # Add Authorization header
+        client.credentials(HTTP_AUTHORIZATION='Bearer ' + access_token)
+        response = client.get(url, data, format='json')
+
+        # Remove Authorization header, otherwise other tests will fail
+        client.credentials()
+        self.assertEqual(response.status_code, 200)
