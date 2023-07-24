@@ -6,11 +6,11 @@ from .models import User
 class NewUserAdmin(UserAdmin):
     model = User
     ordering = ('email',)
-    list_display = ('email', 'phone', 'is_staff', 'is_active', 'is_superuser')
+    list_display = ('email', 'phone', 'is_staff', 'is_superuser')
     fieldsets = (
         (None, {'fields': ('email', 'password')}),
         ('Personal info', {'fields': ('phone',)}),
-        ('Permissions', {'fields': ('is_staff', 'is_active', 'is_superuser')}),
+        ('Permissions', {'fields': ('is_staff', 'is_superuser')}),
         ('Important dates', {'fields': ('date_joined',)}),
     )
 

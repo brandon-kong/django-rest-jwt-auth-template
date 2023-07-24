@@ -7,6 +7,8 @@ factory = APIRequestFactory()
 class UserTests(TestCase):
     emailLoginUrl = '/users/token/email'
     emailCreateUrl = '/users/create/email'
+    phoneCreateUrl = '/users/create/phone'
+    phoneLoginUrl = '/users/token/phone'
 
     def test_create_user(self):
         """
@@ -175,3 +177,176 @@ class UserTests(TestCase):
 
         response = client.post(url, data, format='json')
         self.assertEqual(response.status_code, 401)
+
+    def test_create_user_with_phone(self):
+        """
+        Ensure we can create a new user object with a phone number.
+        """
+        url = self.phoneCreateUrl
+        data = {
+            'phone': '+12345678901',
+            'password': 'abc123',
+        }
+
+        response = client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 200)
+
+    def test_create_user_with_invalid_phone(self):
+        """
+        Tests that a user cannot be created with an invalid phone number.
+        """
+        url = self.phoneCreateUrl
+        data = {
+            'password': 'abc123',
+        }
+
+        response = client.post(url, data, format='json')
+        self.assertNotEqual(response.status_code, 200)
+
+    def test_create_user_with_invalid_password(self):
+        """
+        Tests that a user cannot be created with an invalid password.
+        """
+        url = self.phoneCreateUrl
+        data = {
+            'phone': '+12345678901',
+        }
+
+        response = client.post(url, data, format='json')
+        self.assertNotEqual(response.status_code, 200)
+
+    def test_create_user_with_invalid_phone_and_password(self):
+        """
+        Tests that a user cannot be created with an invalid phone number and password.
+        """
+        url = self.phoneCreateUrl
+        data = {}
+
+        response = client.post(url, data, format='json')
+        self.assertNotEqual(response.status_code, 200)
+
+    def test_user_login_with_phone(self):
+        """
+        Tests that a user can login with a phone number.
+        """
+        url = self.phoneCreateUrl
+        data = {
+            'phone': '+12345678901',
+            'password': 'abc123',
+        }
+
+        response = client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 200)
+
+        url = self.phoneLoginUrl
+
+        response = client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'access')
+        self.assertContains(response, 'refresh')
+
+    def test_user_login_with_invalid_phone(self):
+        """
+        Tests that a user cannot login with an invalid phone number.
+        """
+        url = self.phoneCreateUrl
+        data = {
+            'phone': '+12345678901',
+            'password': 'abc123',
+        }
+
+        response = client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 200)
+
+        url = self.phoneLoginUrl
+        data = {
+            'password': 'abc123',
+        }
+
+        response = client.post(url, data, format='json')
+        self.assertNotEqual(response.status_code, 200)
+
+    def test_user_login_with_invalid_password(self):
+        """
+        Tests that a user cannot login with an invalid password.
+        """
+        url = self.phoneCreateUrl
+        data = {
+            'phone': '+12345678901',
+            'password': 'abc123',
+        }
+
+        response = client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 200)
+
+        url = self.phoneLoginUrl
+        data = {
+            'phone': '+12345678901',
+        }
+
+        response = client.post(url, data, format='json')
+        self.assertNotEqual(response.status_code, 200)
+
+    def test_user_login_with_invalid_phone_and_password(self):
+        """
+        Tests that a user cannot login with an invalid phone number and password.
+        """
+        url = self.phoneCreateUrl
+        data = {
+            'phone': '+12345678901',
+            'password': 'abc123',
+        }
+
+        response = client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 200)
+
+        url = self.phoneLoginUrl
+        data = {}
+
+        response = client.post(url, data, format='json')
+        self.assertNotEqual(response.status_code, 200)
+
+    def test_user_login_with_incorrect_password(self):
+        """
+        Tests that a user cannot login with an incorrect password.
+        """
+        url = self.phoneCreateUrl
+        data = {
+            'phone': '+12345678901',
+            'password': 'abc123',
+        }
+
+        response = client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 200)
+
+        url = self.phoneLoginUrl
+        data = {
+            'phone': '+12345678901',
+            'password': 'abc1234',
+        }
+
+        response = client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 401)
+
+    def test_user_login_with_incorrect_phone(self):
+        """
+        Tests that a user cannot login with an incorrect phone number.
+        """
+        url = self.phoneCreateUrl
+        data = {
+            'phone': '+12345678901',
+            'password': 'abc123',
+        }
+
+        response = client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 200)
+
+        url = self.phoneLoginUrl
+        data = {
+            'phone': '+12345678902',
+            'password': 'abc123',
+        }
+
+        response = client.post(url, data, format='json')
+        self.assertEqual(response.status_code, 401)
+        

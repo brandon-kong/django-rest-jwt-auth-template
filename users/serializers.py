@@ -1,5 +1,10 @@
 from rest_framework.serializers import ModelSerializer
-from .models import User
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 class UserSerializer(ModelSerializer):
     class Meta:
@@ -24,3 +29,29 @@ class UserPhoneSerializer(UserSerializer):
         model = User
         fields = ['id', 'phone', 'password']
         extra_kwargs = {'password': {'write_only': True}}
+
+class PhoneTokenObtainSerializer(TokenObtainPairSerializer):
+    username_field = 'phone'
+
+    class Meta:
+        model = User
+        fields = ['phone', 'password']
+
+class PhoneTokenPairSerializer(PhoneTokenObtainSerializer):
+    @classmethod
+    def get_token(cls, user):
+        return RefreshToken.for_user(user)
+
+    def validate(self, attrs):
+        data = super().validate(attrs)
+
+        refresh = self.get_token(self.user)
+
+        data["refresh"] = str(refresh)
+        data["access"] = str(refresh.access_token)
+
+        return data
+    
+    class Meta:
+        model = User
+        fields = ['phone', 'password']

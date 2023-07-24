@@ -15,7 +15,9 @@ response_types = TypedDict(
 
 error_types = {
     'user_already_exists': 'The provided user already exists!',
-    'invalid_credentials': 'The provided email and/or password are not valid!',
+    'invalid_email_address': 'The provided email address is not valid!',
+    'invalid_credentials': 'The provided email/phone and/or password are not valid!',
+    'invalid_phone_number': 'The provided phone number is not valid!',
     'invalid_token': 'The provided token is not valid!',
     'invalid_request': 'The provided request is not valid!',
     'invalid_user': 'The provided user is not valid!',
