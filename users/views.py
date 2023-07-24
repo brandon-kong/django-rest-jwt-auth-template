@@ -1,7 +1,10 @@
 import datetime
 
 from django.shortcuts import render
+from django.conf import settings
 from django.utils import timezone
+from django.http import HttpResponseRedirect
+
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -12,6 +15,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 from .models import (
     User,
     PhoneVerificationToken,
+    EmailVerificationToken,
 )
 
 from .utils import (
@@ -19,8 +23,11 @@ from .utils import (
     generate_success_response,
     send_sms,
     generate_sms_token,
+    send_mail_message,
     get_time_now,
     validate_phone_number,
+    is_valid_uuid,
+    generate_email_token,
 )
 
 from .serializers import (
@@ -59,7 +66,7 @@ from .serializers import (
 
 class HelloView(APIView):
     def get(self, request):
-        return Response({"message": "Hello, world!"})
+        return HttpResponseRedirect('https://www.google.com')
     
 class ProtectedView(APIView):
     permission_classes = [IsAuthenticated]
@@ -99,6 +106,8 @@ class CreateUserWithEmailView(APIView):
                     }
                 })
             
+        # TODO: Validate email address
+            
             serializer = UserEmailSerializer(data=data)
             if serializer.is_valid():
                 user = serializer.save()
@@ -106,6 +115,48 @@ class CreateUserWithEmailView(APIView):
                 # generate token
                 
                 refresh = RefreshToken.for_user(user)
+
+                # send verification email
+
+                if settings.SEND_EMAIL_VERIFICATION:
+                    EmailVerificationToken.objects.filter(user=user).delete()
+
+                    # create verification token
+                    
+                    rand_uuid = generate_email_token()
+                    token = EmailVerificationToken.objects.create(user=user, token=rand_uuid)
+
+                    link = f"{settings.BACKEND_URL}/users/verify/email/{rand_uuid}"
+                    try:
+                        messages_sent = send_mail_message(
+                            subject="Verify your email address",
+                            message=f"Click this link to verify your email address\n {link}",
+                            email=user.email
+                        )
+                    except Exception as e:
+                        user.delete()
+                        return generate_error_response ({
+                            "status_code": 500,
+                            "error_type": "invalid_request",
+                            "detail": {
+                                "phone": [
+                                    "An error occurred while sending the email verification."
+                                ]
+                            }
+                        })
+                    
+                    if (messages_sent == 0):
+                        user.delete()
+                        return generate_error_response ({
+                            "status_code": 500,
+                            "error_type": "invalid_request",
+                            "detail": {
+                                "email": [
+                                    "An error occurred while sending the email verification."
+                                ]
+                            }
+                        })
+
 
                 return generate_success_response ({
                     "status_code": 200,
@@ -174,28 +225,30 @@ class CreateUserWithPhoneView(APIView):
             refresh = RefreshToken.for_user(user)
 
             # delete old verification tokens
-            PhoneVerificationToken.objects.filter(user=user).delete()
 
-            # create verification token
-            
-            rand_token = generate_sms_token()
-            token = PhoneVerificationToken.objects.create(user=user, token=rand_token)
+            if settings.SEND_PHONE_VERIFICATION:
+                PhoneVerificationToken.objects.filter(user=user).delete()
 
-            try:
-                message = send_sms(phone, f"Your OTP is {rand_token}")
-            except Exception as e:
-                user.delete()
-                return generate_error_response ({
-                    "status_code": 500,
-                    "error_type": "invalid_request",
-                    "detail": {
-                        "phone": [
-                            "An error occurred while sending the OTP."
-                        ]
-                    }
-                })
+                # create verification token
+                
+                rand_token = generate_sms_token()
+                token = PhoneVerificationToken.objects.create(user=user, token=rand_token)
 
-            print(message.sid)
+                try:
+                    message = send_sms(phone, f"Your OTP is {rand_token}")
+                except Exception as e:
+                    user.delete()
+                    return generate_error_response ({
+                        "status_code": 500,
+                        "error_type": "invalid_request",
+                        "detail": {
+                            "phone": [
+                                "An error occurred while sending the OTP."
+                            ]
+                        }
+                    })
+
+                print(message.sid)
 
             return generate_success_response ({
                 "status_code": 200,
@@ -249,8 +302,10 @@ class SendOTPView(APIView):
         refresh = RefreshToken.for_user(user)
 
         # create verification token
-        rand_token = generate_sms_token()
-        token = PhoneVerificationToken.objects.create(user=user, token=rand_token)
+
+        if settings.SEND_PHONE_VERIFICATION:
+            rand_token = generate_sms_token()
+            token = PhoneVerificationToken.objects.create(user=user, token=rand_token)
 
         return generate_success_response ({
             "status_code": 200,
@@ -358,6 +413,53 @@ class VerifyWithOTPView(APIView):
                 "message": "Phone number verified successfully!"
             }
         })
+    
+class VerifyWithEmailView(APIView):
+    permission_classes = [AllowAny,]
+
+    def get(self, request, token):
+
+        if not is_valid_uuid(token):
+            return generate_error_response ({
+                "status_code": 400,
+                "error_type": "invalid_token",
+                "detail": {
+                    "token": [
+                        "This token is not valid."
+                    ],
+                }
+            })
+
+        if not EmailVerificationToken.objects.filter(token=token, expires_at__gt=get_time_now()).exists():
+            return generate_error_response ({
+                "status_code": 400,
+                "error_type": "invalid_token",
+                "detail": {
+                    "token": [
+                        "This token is not valid."
+                    ],
+                }
+            })
+        
+        recent_token = EmailVerificationToken.objects.get(token=token, expires_at__gt=get_time_now())
+        user = recent_token.user
+
+        if user.email_verified:
+            return generate_error_response ({
+                "status_code": 400,
+                "error_type": "user_already_verified",
+                "detail": {
+                    "email": [
+                        "This email is already verified."
+                    ]
+                }
+            })
+        
+        user.email_verified = True
+        user.email_verified_at = timezone.now()
+        user.save()
+
+        return HttpResponseRedirect('https://www.google.com')
 
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated,]

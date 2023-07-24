@@ -11,6 +11,7 @@ from .views import (
     PhoneTokenObtainView,
     ProtectedView,
     VerifyWithOTPView,
+    VerifyWithEmailView,
     LogoutView,
 )
 
@@ -27,4 +28,5 @@ urlpatterns = [
     path('create/phone', CreateUserWithPhoneView.as_view(), name='user_create_phone'),
 
     path('verify/otp', VerifyWithOTPView.as_view(), name='verify_with_otp'),
+    path('verify/email/<str:token>', VerifyWithEmailView.as_view(), name='verify_with_email'),
 ]

@@ -19,6 +19,9 @@ class User(AbstractUser):
     phone_verified = models.BooleanField(default=False)
     phone_verified_at = models.DateTimeField(blank=True, null=True)
 
+    email_verified = models.BooleanField(default=False)
+    email_verified_at = models.DateTimeField(blank=True, null=True)
+
     USERNAME_FIELD='email'
     REQUIRED_FIELDS=[]
 
@@ -33,3 +36,9 @@ class PhoneVerificationToken(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(default=timezone.now() + settings.PHONE_VERIFICATION_TOKEN_LIFETIME)
+
+class EmailVerificationToken(models.Model):
+    token = models.UUIDField(primary_key=True, blank=False, null=False, editable=False, unique=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(default=timezone.now() + settings.EMAIL_VERIFICATION_TOKEN_LIFETIME)
