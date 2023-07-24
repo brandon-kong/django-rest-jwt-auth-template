@@ -32,7 +32,7 @@ class User(AbstractUser):
 
 
 class PhoneVerificationToken(models.Model):
-    token = models.CharField(max_length=6, blank=False, null=False)
+    token = models.CharField(primary_key=True, max_length=6, blank=False, null=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(default=timezone.now() + settings.PHONE_VERIFICATION_TOKEN_LIFETIME)

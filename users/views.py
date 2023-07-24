@@ -248,8 +248,6 @@ class CreateUserWithPhoneView(APIView):
                         }
                     })
 
-                print(message.sid)
-
             return generate_success_response ({
                 "status_code": 200,
                 "detail": {
@@ -459,6 +457,8 @@ class VerifyWithEmailView(APIView):
         user.email_verified_at = timezone.now()
         user.save()
 
+        EmailVerificationToken.objects.filter(user=user).delete()
+        
         return HttpResponseRedirect('https://www.google.com')
 
 class LogoutView(APIView):
