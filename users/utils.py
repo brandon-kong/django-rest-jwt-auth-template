@@ -36,7 +36,6 @@ http_status_codes = {
 }
 
 def generate_error_response(info: response_types):
-    print(info)
     return Response({
         "detail": info.get('detail'),
         "status_code": info.get('status_code'),
