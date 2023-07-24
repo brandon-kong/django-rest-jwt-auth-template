@@ -175,6 +175,15 @@ POST /users/verify/otp/
 Verifies the phone number using the 6-digit verification code sent to the phone number. This endpoint is protected by the IsAuthenticated permission class, so the user must have a valid Authorization header with a valid Access Token.
 ```
 
+### Verify Email Address
+
+```bash
+GET /users/verify/email/<str:token>/
+
+Verifies the email address with the token in the GET request. The token is sent to the user's email address when the user is created. The token is a UUID for added security. This endpoint is not protected by any permission classes because the user will click on the link in the email to verify their email address.
+```
+
+
 ### Logout
 
 ```bash
@@ -187,6 +196,14 @@ POST /users/token/blacklist/
 Blacklists the Refresh Token. This endpoint is protected by the IsAuthenticated permission class, so the user must have a valid Authorization header with a valid Access Token.
 
 Once the Refresh Token is blacklisted, the user will no longer be able to use it to obtain a new Access Token. However, the user will still be able to use the current Access Token until it expires. It is recommended to use a short Access Token expiration time to minimize the amount of time a blacklisted Refresh Token can be used. Deleting the access token from the client side is also recommended.
+```
+
+### Protected Endpoint
+
+```bash
+GET /users/protected/
+
+Returns a message that can only be accessed with a valid Access Token. The token is stored in the Authorization header as a Bearer token.
 ```
 
 ## License
