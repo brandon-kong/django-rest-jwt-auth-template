@@ -114,12 +114,85 @@ POST /users/create/phone/
 
 {
     "phone": "phone",
+    "password": "password"
 }
 
-Creates a user with the given phone number. A 6-digit verification code will be sent to the phone number using Twilio.
+Creates a user with the given phone number and password. A 6-digit verification code will be sent to the phone number using Twilio. The password is an added layer of security in case the verification code is intercepted.
 ```
+
 
 ### Login
 
 ```bash
+POST /users/token/email/
+    
+{
+    "email": "email",
+    "password": "password"
+}
 
+Returns a JSON Web Token Refresh and Access that can be used to authenticate requests.
+```
+
+```bash
+POST /users/token/phone/
+
+{
+    "phone": "phone",
+    "password": "password"
+}
+```
+
+### Refresh Access Token
+
+```bash
+POST /users/token/refresh/
+
+{
+    "refresh": "refresh"
+}
+
+Returns a new Access Token.
+```
+
+### Verify Phone Number
+
+```bash
+POST /users/verify/otp/
+
+{
+    "token": "token"
+}
+
+Verifies the phone number using the 6-digit verification code sent to the phone number. This endpoint is protected by the IsAuthenticated permission class, so the user must have a valid Authorization header with a valid Access Token.
+```
+
+### Logout
+
+```bash
+POST /users/token/blacklist/
+
+{
+    "refresh": "refresh"
+}
+
+Blacklists the Refresh Token. This endpoint is protected by the IsAuthenticated permission class, so the user must have a valid Authorization header with a valid Access Token.
+
+Once the Refresh Token is blacklisted, the user will no longer be able to use it to obtain a new Access Token. However, the user will still be able to use the current Access Token until it expires. It is recommended to use a short Access Token expiration time to minimize the amount of time a blacklisted Refresh Token can be used. Deleting the access token from the client side is also recommended.
+```
+
+## License
+
+[MIT](https://choosealicense.com/licenses/mit/)
+
+## Acknowledgements
+
+- [Django Rest Framework Simple JWT](https://django-rest-framework-simplejwt.readthedocs.io/en/latest/)
+
+
+## Contact
+
+Brandon Kong
+- [LinkedIn](https://www.linkedin.com/in/brandon-kong0/)
+- [Github](https://www.github.com/brandon-kong)
+- [Email](mailto:kongbrandon0@gmail.com)

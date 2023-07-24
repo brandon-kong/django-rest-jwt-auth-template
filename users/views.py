@@ -358,3 +358,28 @@ class VerifyWithOTPView(APIView):
                 "message": "Phone number verified successfully!"
             }
         })
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated,]
+
+    def post(self, request):
+        try:
+            refresh = request.data["refresh"]
+            token = RefreshToken(refresh)
+            token.blacklist()
+
+            return generate_success_response ({
+                "status_code": 200,
+                "detail": {
+                    "message": "Logout successful!"
+                }
+            })
+        
+        except Exception as e:
+            return generate_error_response ({
+                "status_code": 500,
+                "error_type": "invalid_token",
+                "detail": {
+                    "message": "Invalid token!"
+                }
+            })
