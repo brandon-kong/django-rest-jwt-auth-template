@@ -1,6 +1,8 @@
+import datetime
 from random import randint
 
 from django.conf import settings
+from django.utils.timezone import make_aware
 from typing import Literal, TypedDict
 from rest_framework.response import Response
 from rest_framework.status import HTTP_500_INTERNAL_SERVER_ERROR, HTTP_401_UNAUTHORIZED, HTTP_400_BAD_REQUEST, HTTP_200_OK
@@ -29,6 +31,8 @@ error_types = {
     'invalid_email_address': 'The provided email address is not valid!',
     'invalid_credentials': 'The provided email/phone and/or password are not valid!',
     'invalid_phone_number': 'The provided phone number is not valid!',
+    'user_doesnt_exist': 'The provided user does not exist!',
+    'user_already_verified': 'The provided user is already verified!',
     'invalid_token': 'The provided token is not valid!',
     'invalid_request': 'The provided request is not valid!',
     'invalid_user': 'The provided user is not valid!',
@@ -77,3 +81,6 @@ def generate_sms_token():
         return generate_sms_token()
 
     return rand
+
+def get_time_now():
+    return make_aware(datetime.datetime.now())

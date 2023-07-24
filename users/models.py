@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.utils import timezone
 
@@ -31,4 +32,4 @@ class PhoneVerificationToken(models.Model):
     token = models.CharField(max_length=6, blank=False, null=False)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField(default=timezone.now() + timezone.timedelta(minutes=5))
+    expires_at = models.DateTimeField(default=timezone.now() + settings.PHONE_VERIFICATION_TOKEN_LIFETIME)

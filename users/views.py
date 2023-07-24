@@ -1,4 +1,7 @@
+import datetime
+
 from django.shortcuts import render
+from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -9,14 +12,15 @@ from twilio.rest import Client
 
 from .models import (
     User,
-    PhoneVerificationToken
+    PhoneVerificationToken,
 )
 
 from .utils import (
     generate_error_response, 
     generate_success_response,
     send_sms,
-    generate_sms_token
+    generate_sms_token,
+    get_time_now
 )
 
 from .serializers import (
@@ -199,34 +203,35 @@ class SendOTPView(APIView):
                 }
             })
         
-        if User.objects.filter(phone=phone).exists():
+        if not User.objects.filter(phone=phone).exists():
             return generate_error_response ({
                 "status_code": 400,
-                "error_type": "user_already_exists",
+                "error_type": "user_doesnt_exist",
                 "detail": {
                     "phone": [
-                        "This phone is already in use."
+                        "This phone is not registered."
                     ]
                 }
             })
         
         # TODO: Validate phone number
 
-        serializer = UserPhoneSerializer(data=data)
-        if serializer.is_valid():
-            user = serializer.save()
+        user = User.objects.get(phone=phone)
 
-            # generate token
-            #refresh = RefreshToken.for_user(user)
+        # generate token
+        refresh = RefreshToken.for_user(user)
 
-            # create verification token
-            rand_token = generate_sms_token()
-            token = PhoneVerificationToken.objects.create(user=user, token=rand_token)
+        # create verification token
+        rand_token = generate_sms_token()
+        token = PhoneVerificationToken.objects.create(user=user, token=rand_token)
 
-            return generate_success_response ({
-                "status_code": 200,
-                "detail": "OTP sent successfully"
-            })
+        return generate_success_response ({
+            "status_code": 200,
+            "detail": {
+                "refresh": str(refresh),
+                "access": str(refresh.access_token),
+            }
+        })
 
         
 
@@ -237,8 +242,103 @@ class PhoneTokenObtainView(TokenObtainPairView):
     serializer_class = PhoneTokenPairSerializer
             
 
-class VerifyWithOTP(APIView):
+class VerifyWithOTPView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        return Response({"message": "Hello, world!"})
+        user = request.user
+        data = request.data
+
+        if user.phone_verified:
+            return generate_error_response ({
+                "status_code": 400,
+                "error_type": "user_already_verified",
+                "detail": {
+                    "phone": [
+                        "This phone is already verified."
+                    ]
+                }
+            })
+
+        token = data.get('token')
+
+        if not token:
+            return generate_error_response ({
+                "status_code": 400,
+                "error_type": "invalid_token",
+                "detail": {
+                    "token": [
+                        "This field may not be blank."
+                    ],
+                }
+            })
+        
+        if not PhoneVerificationToken.objects.filter(user=user, token=token, expires_at__gt=get_time_now()).exists():
+            return generate_error_response ({
+                "status_code": 400,
+                "error_type": "invalid_token",
+                "detail": {
+                    "token": [
+                        "This token is not valid."
+                    ],
+                }
+            })
+        
+        if len(token) != 6:
+            return generate_error_response ({
+                "status_code": 400,
+                "error_type": "invalid_token",
+                "detail": {
+                    "token": [
+                        "This token is not valid."
+                    ],
+                }
+            })
+                
+        recent_token = PhoneVerificationToken.objects.get(user=user, token=token, expires_at__gt=get_time_now())
+
+        if not recent_token:
+            return generate_error_response ({
+                "status_code": 400,
+                "error_type": "invalid_token",
+                "detail": {
+                    "token": [
+                        "This token is not valid."
+                    ],
+                }
+            })
+        
+        if recent_token.token != token:
+            return generate_error_response ({
+                "status_code": 400,
+                "error_type": "invalid_token",
+                "detail": {
+                    "token": [
+                        "This token is not valid."
+                    ],
+                }
+            })
+        
+        """if recent_token.expires_at < timezone.now():
+            return generate_error_response ({
+                "status_code": 400,
+                "error_type": "invalid_token",
+                "detail": {
+                    "token": [
+                        "This token is expired."
+                    ],
+                }
+            })"""
+        
+        user.phone_verified = True
+        user.phone_verified_at = timezone.now()
+        user.save()
+
+        PhoneVerificationToken.objects.filter(user=user).delete()
+
+        return generate_success_response ({
+            "status_code": 200,
+            "detail": {
+                "message": "Phone number verified successfully!"
+            }
+        })

@@ -10,6 +10,7 @@ from .views import (
     CreateUserWithPhoneView,
     PhoneTokenObtainView,
     ProtectedView,
+    VerifyWithOTPView,
 )
 
 urlpatterns = [
@@ -22,4 +23,6 @@ urlpatterns = [
 
     path('create/email', CreateUserWithEmailView.as_view(), name='user_create_email'),
     path('create/phone', CreateUserWithPhoneView.as_view(), name='user_create_phone'),
+
+    path('verify/otp', VerifyWithOTPView.as_view(), name='verify_with_otp'),
 ]
