@@ -22,7 +22,7 @@ class UserManager(BaseUserManager):
         user.save()
         return user
     
-    def create_user_by_phone(self, phone=None, password=None, **extra_fields):
+    def create_user_by_phone(self, phone, password=None, **extra_fields):
         """
         Create and save a user with the given phone and password.
         """

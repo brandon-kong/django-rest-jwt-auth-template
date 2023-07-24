@@ -33,7 +33,6 @@ class UserPhoneSerializer(UserSerializer):
     def is_valid(self):
         # password doesn't need to be required for phone registration
 
-        self.fields['password'].required = False
         return super().is_valid()
 
 class PhoneTokenObtainSerializer(TokenObtainPairSerializer):

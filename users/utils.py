@@ -84,3 +84,15 @@ def generate_sms_token():
 
 def get_time_now():
     return make_aware(datetime.datetime.now())
+
+def validate_phone_number(phone: str) -> bool:
+    if not phone:
+        return False
+
+    phone_number = TWILIO_CLIENT.lookups.v2.phone_numbers(phone).fetch()
+    print(phone_number)
+
+    if not phone_number.valid:
+        return False
+
+    return True

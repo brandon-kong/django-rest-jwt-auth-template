@@ -8,7 +8,6 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
-from twilio.rest import Client
 
 from .models import (
     User,
@@ -20,7 +19,8 @@ from .utils import (
     generate_success_response,
     send_sms,
     generate_sms_token,
-    get_time_now
+    get_time_now,
+    validate_phone_number,
 )
 
 from .serializers import (
@@ -153,6 +153,19 @@ class CreateUserWithPhoneView(APIView):
         
         # TODO: Validate phone number
 
+        phone_is_valid = validate_phone_number(phone)
+
+        if not phone_is_valid:
+            return generate_error_response ({
+                "status_code": 400,
+                "error_type": "invalid_phone_number",
+                "detail": {
+                    "phone": [
+                        "This number is not a valid phone number."
+                    ]
+                }
+            })
+
         serializer = UserPhoneSerializer(data=data)
         if serializer.is_valid():
             user = serializer.save()
@@ -164,9 +177,23 @@ class CreateUserWithPhoneView(APIView):
             PhoneVerificationToken.objects.filter(user=user).delete()
 
             # create verification token
+            
             rand_token = generate_sms_token()
             token = PhoneVerificationToken.objects.create(user=user, token=rand_token)
-            message = send_sms(phone, f"Your OTP is {rand_token}")
+
+            try:
+                message = send_sms(phone, f"Your OTP is {rand_token}")
+            except Exception as e:
+                user.delete()
+                return generate_error_response ({
+                    "status_code": 500,
+                    "error_type": "invalid_request",
+                    "detail": {
+                        "phone": [
+                            "An error occurred while sending the OTP."
+                        ]
+                    }
+                })
 
             print(message.sid)
 
@@ -319,23 +346,12 @@ class VerifyWithOTPView(APIView):
                 }
             })
         
-        """if recent_token.expires_at < timezone.now():
-            return generate_error_response ({
-                "status_code": 400,
-                "error_type": "invalid_token",
-                "detail": {
-                    "token": [
-                        "This token is expired."
-                    ],
-                }
-            })"""
-        
         user.phone_verified = True
         user.phone_verified_at = timezone.now()
         user.save()
 
         PhoneVerificationToken.objects.filter(user=user).delete()
-
+        
         return generate_success_response ({
             "status_code": 200,
             "detail": {

@@ -99,5 +99,27 @@ python manage.py runserver
 ### Register
 
 ```bash
-POST /api/auth/register/
+POST /users/create/email/
+
+{
+    "email": "email",
+    "password": "password"
+}
+
+Creates a user with the given email and password.
 ```
+
+```bash
+POST /users/create/phone/
+
+{
+    "phone": "phone",
+}
+
+Creates a user with the given phone number. A 6-digit verification code will be sent to the phone number using Twilio.
+```
+
+### Login
+
+```bash
+
