@@ -15,6 +15,10 @@ class UserTests(TestCase):
 
     twilio_number = settings.TWILIO_VERIFIED_NUMBER
 
+    def setUp(self):
+        settings.SEND_PHONE_VERIFICATION = False
+        settings.SEND_EMAIL_VERIFICATION = False
+        
     def test_create_user(self):
         """
         Ensure we can create a new user object.

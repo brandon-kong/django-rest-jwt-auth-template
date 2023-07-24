@@ -21,6 +21,7 @@ If you have any suggestions or improvements, please feel free to open an issue o
 - JWT-Authentication
 - Blacklisting of Refresh Tokens
 - Twilio integration for phone number verification
+- Email link verification
 
 ## Setup
 
