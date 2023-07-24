@@ -5,10 +5,25 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
+from twilio.rest import Client
 
-from .models import User
-from .utils import generate_error_response, generate_success_response
-from .serializers import UserEmailSerializer, UserPhoneSerializer, PhoneTokenPairSerializer
+from .models import (
+    User,
+    PhoneVerificationToken
+)
+
+from .utils import (
+    generate_error_response, 
+    generate_success_response,
+    send_sms,
+    generate_sms_token
+)
+
+from .serializers import (
+    UserEmailSerializer, 
+    UserPhoneSerializer, 
+    PhoneTokenPairSerializer
+)
 
 """
 
@@ -85,6 +100,7 @@ class CreateUserWithEmailView(APIView):
                 user = serializer.save()
 
                 # generate token
+                
                 refresh = RefreshToken.for_user(user)
 
                 return generate_success_response ({
@@ -120,41 +136,101 @@ class CreateUserWithPhoneView(APIView):
                 }
             })
         
-        if phone:
-            if User.objects.filter(phone=phone).exists():
-                return generate_error_response ({
-                    "status_code": 400,
-                    "error_type": "user_already_exists",
-                    "detail": {
-                        "phone": [
-                            "This phone is already in use."
-                        ]
-                    }
-                })
+        if User.objects.filter(phone=phone).exists():
+            return generate_error_response ({
+                "status_code": 400,
+                "error_type": "user_already_exists",
+                "detail": {
+                    "phone": [
+                        "This phone is already in use."
+                    ]
+                }
+            })
+        
+        # TODO: Validate phone number
+
+        serializer = UserPhoneSerializer(data=data)
+        if serializer.is_valid():
+            user = serializer.save()
+
+            # generate token
+            refresh = RefreshToken.for_user(user)
+
+            # delete old verification tokens
+            PhoneVerificationToken.objects.filter(user=user).delete()
+
+            # create verification token
+            rand_token = generate_sms_token()
+            token = PhoneVerificationToken.objects.create(user=user, token=rand_token)
+            message = send_sms(phone, f"Your OTP is {rand_token}")
+
+            print(message.sid)
+
+            return generate_success_response ({
+                "status_code": 200,
+                "detail": {
+                    "refresh": str(refresh),
+                    "access": str(refresh.access_token),
+                }
+            })
+        else:
+            return generate_error_response ({
+                "status_code": 500,
+                "error_type": "invalid_request",
+                "detail": serializer.errors
+            })
             
-            # TODO: Validate phone number
+class SendOTPView(APIView):
+    permission_classes = [IsAuthenticated]
 
-            serializer = UserPhoneSerializer(data=data)
-            if serializer.is_valid():
-                user = serializer.save()
+    def post(self, request):
+        data = request.data
 
-                # generate token
-                refresh = RefreshToken.for_user(user)
+        phone = data.get('phone')
 
-                return generate_success_response ({
-                    "status_code": 200,
-                    "detail": {
-                        "refresh": str(refresh),
-                        "access": str(refresh.access_token),
-                    }
-                })
-            else:
-                return generate_error_response ({
-                    "status_code": 500,
-                    "error_type": "invalid_request",
-                    "detail": serializer.errors
-                })
-            
+        if not phone:
+            return generate_error_response ({
+                "status_code": 400,
+                "error_type": "invalid_phone_number",
+                "detail": {
+                    "phone": [
+                        "This field may not be blank."
+                    ],
+                }
+            })
+        
+        if User.objects.filter(phone=phone).exists():
+            return generate_error_response ({
+                "status_code": 400,
+                "error_type": "user_already_exists",
+                "detail": {
+                    "phone": [
+                        "This phone is already in use."
+                    ]
+                }
+            })
+        
+        # TODO: Validate phone number
+
+        serializer = UserPhoneSerializer(data=data)
+        if serializer.is_valid():
+            user = serializer.save()
+
+            # generate token
+            #refresh = RefreshToken.for_user(user)
+
+            # create verification token
+            rand_token = generate_sms_token()
+            token = PhoneVerificationToken.objects.create(user=user, token=rand_token)
+
+            return generate_success_response ({
+                "status_code": 200,
+                "detail": "OTP sent successfully"
+            })
+
+        
+
+
 class PhoneTokenObtainView(TokenObtainPairView):
     permission_classes = [AllowAny]
 

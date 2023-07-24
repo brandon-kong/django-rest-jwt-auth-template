@@ -1,6 +1,17 @@
+from random import randint
+
+from django.conf import settings
 from typing import Literal, TypedDict
 from rest_framework.response import Response
 from rest_framework.status import HTTP_500_INTERNAL_SERVER_ERROR, HTTP_401_UNAUTHORIZED, HTTP_400_BAD_REQUEST, HTTP_200_OK
+
+from .models import (
+    PhoneVerificationToken,
+)
+
+from twilio.rest import Client
+
+TWILIO_CLIENT = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
 
 response_types = TypedDict(
     'response_types',
@@ -50,3 +61,19 @@ def generate_success_response(info: response_types):
         "detail": info.get('detail'),
          "status_code": info.get('status_code'),
     }, status=HTTP_200_OK)
+
+def send_sms(phone: str, message: str):
+    return TWILIO_CLIENT.messages.create(
+        body=message,
+        from_=settings.TWILIO_PHONE_NUMBER,
+        to=phone
+    )
+
+def generate_sms_token():
+    rand = randint(100000, 999999)
+    print(rand)
+
+    if PhoneVerificationToken.objects.filter(token=rand).exists():
+        return generate_sms_token()
+
+    return rand

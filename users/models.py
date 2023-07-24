@@ -15,6 +15,9 @@ class User(AbstractUser):
     is_superuser = models.BooleanField(default=False)
     date_joined = models.DateTimeField(default=timezone.now)
 
+    phone_verified = models.BooleanField(default=False)
+    phone_verified_at = models.DateTimeField(blank=True, null=True)
+
     USERNAME_FIELD='email'
     REQUIRED_FIELDS=[]
 
@@ -23,3 +26,9 @@ class User(AbstractUser):
     def __str__(self) -> str:
         return super().__str__() or str(self.id)
 
+
+class PhoneVerificationToken(models.Model):
+    token = models.CharField(max_length=6, blank=False, null=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(default=timezone.now() + timezone.timedelta(minutes=5))

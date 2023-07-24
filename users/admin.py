@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import User
+from .models import User, PhoneVerificationToken
 
 class NewUserAdmin(UserAdmin):
     model = User
@@ -22,3 +22,4 @@ class NewUserAdmin(UserAdmin):
 )
 
 admin.site.register(User, NewUserAdmin)
+admin.site.register(PhoneVerificationToken)

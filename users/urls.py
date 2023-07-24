@@ -9,7 +9,7 @@ from .views import (
     CreateUserWithEmailView,
     CreateUserWithPhoneView,
     PhoneTokenObtainView,
-    ProtectedView
+    ProtectedView,
 )
 
 urlpatterns = [

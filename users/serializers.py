@@ -30,6 +30,12 @@ class UserPhoneSerializer(UserSerializer):
         fields = ['id', 'phone', 'password']
         extra_kwargs = {'password': {'write_only': True}}
 
+    def is_valid(self):
+        # password doesn't need to be required for phone registration
+
+        self.fields['password'].required = False
+        return super().is_valid()
+
 class PhoneTokenObtainSerializer(TokenObtainPairSerializer):
     username_field = 'phone'
 
