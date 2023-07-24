@@ -15,6 +15,13 @@ that it will be useful to others as well.
 
 If you have any suggestions or improvements, please feel free to open an issue or submit a pull request.
 
+## Features
+- User model with email and phone number fields
+- User authentication endpoints
+- JWT-Authentication
+- Blacklisting of Refresh Tokens
+- Twilio integration for phone number verification
+
 ## Setup
 
 ### Clone the repository
