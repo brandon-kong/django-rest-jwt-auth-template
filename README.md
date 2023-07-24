@@ -183,7 +183,7 @@ Once the Refresh Token is blacklisted, the user will no longer be able to use it
 
 ## License
 
-[MIT](https://choosealicense.com/licenses/mit/)
+[MIT](/LICENSE)
 
 ## Acknowledgements
 
