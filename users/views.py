@@ -26,6 +26,7 @@ from .utils import (
     send_mail_message,
     get_time_now,
     validate_phone_number,
+    validate_email,
     is_valid_uuid,
     generate_email_token,
 )
@@ -107,6 +108,21 @@ class CreateUserWithEmailView(APIView):
                 })
             
         # TODO: Validate email address
+
+            email_is_valid, normalized_email = validate_email(email)
+
+            if not email_is_valid:
+                return generate_error_response ({
+                    "status_code": 400,
+                    "error_type": "invalid_email_address",
+                    "detail": {
+                        "email": [
+                            "This email is not a valid email address."
+                        ]
+                    }
+                })
+            
+            data['email'] = normalized_email
             
             serializer = UserEmailSerializer(data=data)
             if serializer.is_valid():
@@ -458,7 +474,7 @@ class VerifyWithEmailView(APIView):
         user.save()
 
         EmailVerificationToken.objects.filter(user=user).delete()
-        
+
         return HttpResponseRedirect('https://www.google.com')
 
 class LogoutView(APIView):

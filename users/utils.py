@@ -15,6 +15,7 @@ from .models import (
     EmailVerificationToken,
 )
 
+from email_validator import validate_email as email_valid, EmailNotValidError
 from twilio.rest import Client
 
 TWILIO_CLIENT = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
@@ -108,6 +109,14 @@ def validate_phone_number(phone: str) -> bool:
 
     return True
 
+def validate_email(email: str) -> bool:
+    try:
+        info = email_valid(email)
+        return True, info.normalized
+    except EmailNotValidError:
+        return False, None
+
+
 def is_valid_uuid(uuid_to_test, version=4):
     """
     Martin Thoma
@@ -135,6 +144,7 @@ def is_valid_uuid(uuid_to_test, version=4):
     except ValueError:
         return False
     return str(uuid_obj) == uuid_to_test
+
 
 def send_mail_message(email: str, subject: str, message: str) -> int:
 

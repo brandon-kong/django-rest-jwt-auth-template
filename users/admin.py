@@ -16,6 +16,7 @@ class NewUserAdmin(UserAdmin):
         ('Personal info', {'fields': ('phone',)}),
         ('Permissions', {'fields': ('is_staff', 'is_superuser')}),
         ('Important dates', {'fields': ('date_joined',)}),
+        ('Verification', {'fields': ('phone_verified', 'email_verified')}),
     )
 
     add_fieldsets = (
