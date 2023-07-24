@@ -1,5 +1,6 @@
 from django.test import TestCase
 from rest_framework.test import APIRequestFactory, APIClient
+from django.conf import settings
 
 client = APIClient()
 factory = APIRequestFactory()
@@ -11,6 +12,8 @@ class UserTests(TestCase):
     phoneLoginUrl = '/users/token/phone'
 
     protectedUrl = '/users/protected'
+
+    twilio_number = settings.TWILIO_VERIFIED_NUMBER
 
     def test_create_user(self):
         """
@@ -186,7 +189,7 @@ class UserTests(TestCase):
         """
         url = self.phoneCreateUrl
         data = {
-            'phone': '+12345678901',
+            'phone': self.twilio_number,
             'password': 'abc123',
         }
 
@@ -211,7 +214,7 @@ class UserTests(TestCase):
         """
         url = self.phoneCreateUrl
         data = {
-            'phone': '+12345678901',
+            'phone': self.twilio_number,
         }
 
         response = client.post(url, data, format='json')
@@ -233,7 +236,7 @@ class UserTests(TestCase):
         """
         url = self.phoneCreateUrl
         data = {
-            'phone': '+12345678901',
+            'phone': self.twilio_number,
             'password': 'abc123',
         }
 
@@ -253,7 +256,7 @@ class UserTests(TestCase):
         """
         url = self.phoneCreateUrl
         data = {
-            'phone': '+12345678901',
+            'phone': self.twilio_number,
             'password': 'abc123',
         }
 
@@ -274,7 +277,7 @@ class UserTests(TestCase):
         """
         url = self.phoneCreateUrl
         data = {
-            'phone': '+12345678901',
+            'phone': self.twilio_number,
             'password': 'abc123',
         }
 
@@ -282,9 +285,9 @@ class UserTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
         url = self.phoneLoginUrl
-        data = {
-            'phone': '+12345678901',
-        }
+        data.update({
+            'password': None
+        })
 
         response = client.post(url, data, format='json')
         self.assertNotEqual(response.status_code, 200)
@@ -295,7 +298,7 @@ class UserTests(TestCase):
         """
         url = self.phoneCreateUrl
         data = {
-            'phone': '+12345678901',
+            'phone': self.twilio_number,
             'password': 'abc123',
         }
 
@@ -314,7 +317,7 @@ class UserTests(TestCase):
         """
         url = self.phoneCreateUrl
         data = {
-            'phone': '+12345678901',
+            'phone': self.twilio_number,
             'password': 'abc123',
         }
 
@@ -323,7 +326,7 @@ class UserTests(TestCase):
 
         url = self.phoneLoginUrl
         data = {
-            'phone': '+12345678901',
+            'phone': self.twilio_number,
             'password': 'abc1234',
         }
 
@@ -336,7 +339,7 @@ class UserTests(TestCase):
         """
         url = self.phoneCreateUrl
         data = {
-            'phone': '+12345678901',
+            'phone': self.twilio_number,
             'password': 'abc123',
         }
 
