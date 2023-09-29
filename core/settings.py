@@ -36,11 +36,24 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    # Local apps
     'users',
+
+    # Rest framework
     'rest_framework',
-    'corsheaders',
+    'rest_framework.authtoken',
+
+    # Authentication 
     'rest_framework_simplejwt.token_blacklist',
     'rest_framework_simplejwt',
+    'allauth',
+
+    # Cors
+    'corsheaders',
+
+    # Silk for API profiling
+    'silk',
+
 
     'django.contrib.admin',
     'django.contrib.auth',
@@ -52,6 +65,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'silk.middleware.SilkyMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -138,71 +152,132 @@ STATIC_URL = '/static/'
 
 AUTH_USER_MODEL = 'users.User'
 
-
-# AUTH BACKENDS
-
 AUTHENTICATION_BACKENDS = [
     'users.backends.EmailBackend',
     'users.backends.PhoneBackend',
 ]
 
+SITE_ID = 1
 
-# REST FRAMEWORK
+
+# DRF
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_PERMISSIONS': [
-        'rest_framework.permissions.AllowAny',
-    ],
-    
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication'
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
 }
 
-# SYSTEM CHECKS
 
-SILENCED_SYSTEM_CHECKS = ["auth.W004"]
+# Silence Warnings
 
-# SIMPLE JWT
+SILENCED_SYSTEM_CHECKS = [
+    'auth.W004',
+    'models.W042'
+]
 
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=10),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
-    'ALGORITHM': 'HS256',
-    'SIGNING_KEY': SECRET_KEY,
-    'VERIFYING_KEY': None,
-    'AUTH_HEADER_TYPES': ('Bearer',),
-    'USER_ID_FIELD': 'id',
-    'USER_ID_CLAIM': 'user_id',
-    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
-    'TOKEN_TYPE_CLAIM': 'token_type',
-}
+# Silk
 
-# TWILIO
+SILKY_PYTHON_PROFILER = True
+SILKY_IGNORE_PATHS = [
+    r'^/admin/',
+]
+
+PASSWORD_HASHERS = [
+    "django.contrib.auth.hashers.PBKDF2PasswordHasher",
+    "django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher",
+    "django.contrib.auth.hashers.Argon2PasswordHasher",
+    "django.contrib.auth.hashers.BCryptSHA256PasswordHasher",
+    "django.contrib.auth.hashers.ScryptPasswordHasher",
+]
+
+# SMS
+
+SEND_SMS_TEXT = env('SEND_SMS_TEXT', default=False)
+SMS_CODE_LENGTH = env('SMS_CODE_LENGTH', default=6)
+SMS_CODE_EXPIRY = timedelta(minutes=10)
+SMS_CODE_MAXIMUM_ATTEMPTS = env('SMS_CODE_MAXIMUM_ATTEMPTS', default=5)
+
+SEND_SMS_CALL = env('SEND_SMS_CALL', default=False)
+
+## Twilio
 
 TWILIO_ACCOUNT_SID = env('TWILIO_ACCOUNT_SID')
 TWILIO_AUTH_TOKEN = env('TWILIO_AUTH_TOKEN')
 TWILIO_PHONE_NUMBER = env('TWILIO_PHONE_NUMBER')
-TWILIO_VERIFIED_NUMBER = env('TWILIO_VERIFIED_NUMBER')
 
-# EMAIL
+# Email
 
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST=env('EMAIL_HOST')
-EMAIL_PORT=env('EMAIL_PORT')
-EMAIL_HOST_USER = env('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
-EMAIL_USE_TLS = True
-EMAIL_USE_SSL = False
+EMAIL_HOST = env('SMTP_HOST', default='smtp.gmail.com')
+EMAIL_PORT = env('SMTP_PORT', default=587)
+EMAIL_HOST_USER = env('SMTP_USER')
+EMAIL_HOST_PASSWORD = env('SMTP_PASS')
+EMAIL_USE_TLS = env('SMTP_TLS', default=True)
+EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
 
-# VERIFICATION TOKENS
+EMAIL_VERIFICATION_TOKEN_EXPIRY = timedelta(days=1)
 
-SEND_PHONE_VERIFICATION = False
-PHONE_VERIFICATION_TOKEN_LIFETIME = timedelta(minutes=15)
+# CORS
 
-SEND_EMAIL_VERIFICATION = True
-EMAIL_VERIFICATION_TOKEN_LIFETIME = timedelta(minutes=15)
+CORS_ALLOW_ALL_ORIGINS = True
 
-BACKEND_URL = env('BACKEND_URL', default='http://localhost:8000')
+# JWT
+
+SIMPLE_JWT = {
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=1),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": False,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,
+    "VERIFYING_KEY": None,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+    "TOKEN_TYPE_CLAIM": "token_type",
+}
+
+# Allauth
+
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = "none"
+ACCOUNT_USER_MODEL_USERNAME_FIELD = None
+ACCOUNT_UNIQUE_EMAIL = True
+ACCOUNT_AUTHENTICATION_METHOD = "email"
+ACCOUNT_USERNAME_REQUIRED = False
+
+ACCOUNT_SIGNUP_PASSWORD_ENTER_TWICE = False
+
+SOCIALACCOUNT_PROVIDERS = {
+    "google": {
+        "APP": {
+            "client_id": env("GOOGLE_CLIENT_ID", default=""),
+            "secret": env("GOOGLE_CLIENT_SECRET", default=""),
+            "key": "",
+        },
+        "SCOPE": [
+            "profile",
+            "email",
+        ],
+        "AUTH_PARAMS": {
+            "access_type": "online",
+        },
+        "VERIFIED_EMAIL": True,
+    },
+}
+
+REST_AUTH = {
+    "USE_JWT": True,
+    "JWT_AUTH_HTTPONLY": False,
+
+    'REGISTER_SERIALIZER': 'users.schemas.serializers.UserRegistrationSerializer'
+
+}
+
+REST_AUTH_REGISTER_SERIALIZERS = {
+    'REGISTER_SERIALIZER': 'users.schemas.serializers.UserRegistrationSerializer'
+}
+
+FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:3000')
+VERIFY_EMAIL_URL = FRONTEND_URL + '/verify-email'
