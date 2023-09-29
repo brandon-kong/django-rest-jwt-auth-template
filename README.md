@@ -31,7 +31,13 @@ If you have any suggestions or improvements, please feel free to open an issue o
 ### Clone the repository
 
 ```bash
-git clone https://github.com/brandon-kong/django-rest-jwt-auth-template.git
+git clone https://github.com/brandon-kong/django-rest-jwt-auth-template.git backend
+```
+
+### Go into working directory
+
+```bash
+cd backend
 ```
 
 ### Create a virtual environment
@@ -45,7 +51,7 @@ Once the virtual environment is created, activate it.
 On Windows:
 
 ```bash
-.venv\Scripts\activate.bat
+.venv\Scripts\activate
 ```
 
 On Linux or MacOS:
