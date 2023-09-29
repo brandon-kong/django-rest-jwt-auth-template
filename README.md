@@ -17,6 +17,9 @@ If you have any suggestions or improvements, please feel free to open an issue o
 
 ## Features
 - User model with email and phone number fields
+- User model manager
+- User model serializer
+- OAuth2 authentication
 - User authentication endpoints
 - JWT-Authentication
 - Blacklisting of Refresh Tokens
@@ -65,11 +68,37 @@ In this template, I am using PostgreSQL as the database. If you want to opt for 
 Create a .env file in the root directory of the project (/core) and add the following variables:
 
 ```bash
-DB_HOST='...'
-DB_PORT='...'
-DB_USER='...'
-DB_PASSWORD='...'
-DB_NAME='...'
+DB_NAME="postgres"
+DB_USER="postgres"
+DB_PASS="postgres"
+DB_HOST="localhost"
+DB_PORT="5432"
+
+# SMTP settings
+
+SMTP_HOST="smtp.gmail.com"
+SMTP_PORT=587
+SMTP_USER="user"
+SMTP_PASS="email"
+SMTP_TLS=True
+SMTP_SSL=False
+
+# SMS settings
+
+SEND_SMS_TEXT=True
+SMS_CODE_LENGTH=6
+
+SEND_SMS_CALL=True
+# Twilio settings
+
+TWILIO_ACCOUNT_SID="ssid"
+TWILIO_AUTH_TOKEN="auth"
+TWILIO_PHONE_NUMBER="number"
+
+# Social auth settings
+
+GOOGLE_CLIENT_ID="client"
+GOOGLE_CLIENT_SECRET="secret"
 ```
 
 **Note:** If you are using SQLite, you do not need to add the above variables to the .env file,
@@ -107,32 +136,39 @@ python manage.py runserver
 ### Register
 
 ```bash
-POST /users/create/email/
+POST /users/register/email/
 
 {
     "email": "email",
-    "password": "password"
+    "password": "password",
+    "first_name": "first_name",
+    "last_name": "last_name"
 }
 
 Creates a user with the given email and password.
 ```
 
 ```bash
-POST /users/create/phone/
+POST /users/register/phone/
 
 {
     "phone": "phone",
-    "password": "password"
+    "email": "email",
+    "password": "password",
+    "first_name": "first_name",
+    "last_name": "last_name",
+
+    "token": "sms_token"
 }
 
-Creates a user with the given phone number and password. A 6-digit verification code will be sent to the phone number using Twilio. The password is an added layer of security in case the verification code is intercepted.
+Creates a user with the given phone number and password. The phone number is verified using the 6-digit verification code sent to the phone number.
 ```
 
 
 ### Login
 
 ```bash
-POST /users/token/email/
+POST /users/verify/email/
     
 {
     "email": "email",
@@ -143,11 +179,11 @@ Returns a JSON Web Token Refresh and Access that can be used to authenticate req
 ```
 
 ```bash
-POST /users/token/phone/
+POST /users/verify/phone/
 
 {
     "phone": "phone",
-    "password": "password"
+    "token": "token"
 }
 ```
 
@@ -166,45 +202,78 @@ Returns a new Access Token.
 ### Verify Phone Number
 
 ```bash
-POST /users/verify/otp/
+POST /users/otp/verify/
 
 {
+    "phone": "phone",
     "token": "token"
 }
 
 Verifies the phone number using the 6-digit verification code sent to the phone number. This endpoint is protected by the IsAuthenticated permission class, so the user must have a valid Authorization header with a valid Access Token.
 ```
 
+### Send Phone OTP
+
+```bash
+POST /users/otp/send/
+
+{
+    "phone": "phone",
+}
+
+Sends a 6-digit verification code to the phone number.
+```
+
+
+### Verify Phone OTP
+
+```bash
+POST /users/otp/verify/
+
+{
+    "phone": "phone",
+    "token": "token"
+}
+
+Verifies the phone number using the 6-digit verification code sent to the phone number.
+```
+
 ### Verify Email Address
 
 ```bash
-GET /users/verify/email/<str:token>/
+POST /users/email/verify/?token=token/
+
+{
+    "token": "token",
+}
 
 Verifies the email address with the token in the GET request. The token is sent to the user's email address when the user is created. The token is a UUID for added security. This endpoint is not protected by any permission classes because the user will click on the link in the email to verify their email address.
 ```
 
-
-### Logout
+### Email exists
 
 ```bash
-POST /users/token/blacklist/
+POST /users/email/exists/
 
 {
-    "refresh": "refresh"
+    "email": "email",
 }
 
-Blacklists the Refresh Token. This endpoint is protected by the IsAuthenticated permission class, so the user must have a valid Authorization header with a valid Access Token.
-
-Once the Refresh Token is blacklisted, the user will no longer be able to use it to obtain a new Access Token. However, the user will still be able to use the current Access Token until it expires. It is recommended to use a short Access Token expiration time to minimize the amount of time a blacklisted Refresh Token can be used. Deleting the access token from the client side is also recommended.
+Returns True if the email exists in the database, otherwise returns False.
 ```
 
-### Protected Endpoint
+### Phone exists
 
 ```bash
-GET /users/protected/
+POST /users/phone/exists/
 
-Returns a message that can only be accessed with a valid Access Token. The token is stored in the Authorization header as a Bearer token.
+{
+    "phone": "phone",
+}
+
+Returns True if the phone number exists in the database, otherwise returns False.
 ```
+
 
 ## License
 
