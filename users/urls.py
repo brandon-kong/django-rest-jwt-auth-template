@@ -2,7 +2,7 @@ from django.urls import path
 
 from .api import (
     EmailRegisterView,
-    EmailVerifyView,
+    EmailLoginView,
     PhoneRegisterView,
     PhoneVerifyView,
 
@@ -31,8 +31,8 @@ urlpatterns = [
     
     path('verify/oauth/google/', GoogleLoginView.as_view(), name='google_login'),
     
-    path('verify/email/', EmailVerifyView.as_view(), name='user_verify_email'),
-    path('verify/phone/', PhoneVerifyView.as_view(), name='user_verify_phone'),
+    path('login/email/', EmailLoginView.as_view(), name='user_login_email'),
+    path('login/phone/', PhoneVerifyView.as_view(), name='user_verify_phone'),
     
     path('otp/call/', CallUserWithCodeView.as_view(), name='user_call_phone_otp'),
     path('otp/send/', SendPhoneSMSVerificationView.as_view(), name='user_send_phone_otp'),

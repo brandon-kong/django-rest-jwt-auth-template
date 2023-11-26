@@ -13,25 +13,33 @@ from users.utils import (
     user_exists_by_email,
 )
 
-class EmailRegistrationSchema(serializers.Serializer):
-    email = serializers.EmailField(required=True, allow_null=False)
-    password = serializers.CharField(required=True, allow_null=False, write_only=True)
-    first_name = serializers.CharField(required=True, allow_null=False)
-    last_name = serializers.CharField(required=True, allow_null=False)
+class EmailRegistrationSchema(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = (
+            'email',
+            'first_name',
+            'last_name',
+            'password',
+        )
+        extra_kwargs = {
+            'password': {
+                'write_only': True,
+            },
+        }
 
     def validate(self, data):
         # optimized for speed
 
         # make sure email is unique
 
-        if not data['email']:
-            self.errors['email'] = _('Email is required.')
+        email = data.get('email', None)
+        if not email:
             raise serializers.ValidationError({
                 'email': _('Email is required.'),
-            })     
+            })
         
-        if (user_exists_by_email(data['email'])):
-            self.errors['email'] = _('Email already exists.')
+        if user_exists_by_email(email):
             raise serializers.ValidationError({
                 'email': _('Email already exists.'),
             })
@@ -48,10 +56,7 @@ class EmailRegistrationSchema(serializers.Serializer):
                 'email': _('Email is required.'),
             })
 
-        user = User.objects.create_user(
-            email=validated_data['email'],
-            password=validated_data['password'],
-        )
+        user = User.objects.create_user(**validated_data)
 
         return user
         

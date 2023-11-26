@@ -63,6 +63,8 @@ from .schemas.serializers import (
     UserSerializer,
 )
 
+from allauth.account.models import EmailAddress
+
 
 class GoogleLoginView(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
@@ -71,11 +73,9 @@ class GoogleLoginView(SocialLoginView):
 
 
 class EmailRegisterView(APIView):
-    permission_classes = [AllowAny,]
     serializer_class = EmailRegistrationSchema
+    permission_classes = [AllowAny,]
 
-    #@silk_profile(name='EmailRegisterView.post')
-    #@method_decorator(cache_page(60*60*2))
     def post(self, request, *args, **kwargs):
         serializer = EmailRegistrationSchema(data=request.data)
 
@@ -83,16 +83,14 @@ class EmailRegisterView(APIView):
 
         if not is_valid:
             return generate_error_response({
-                "error_type": "invalid_request",
-                "status": 400,
                 "errors": serializer.errors,
+                "status": 400,
+                "message": "Bad request",
             })
         
         serializer.save()
 
-        # at this point, email should be sent to the user
-
-        # generate email verification token
+        # send email verification token
 
         if (settings.SEND_EMAIL_VERIFICATION):
 
@@ -113,16 +111,18 @@ class EmailRegisterView(APIView):
             return generate_success_response({
                 "detail": "User created successfully.",
                 "status": 201,
+                "data": {
+                    "user": UserSerializer(serializer.instance).data,
+                }
             })
         
-        
         return generate_error_response({
-            "error_type": "invalid_request",
+            "message": "User could not be created.",
             "status": 400,
-            "detail": "Bad email or password.",
+            "errors": serializer.errors,
         })
     
-class EmailVerifyView(APIView):
+class EmailLoginView(APIView):
     permission_classes = [AllowAny,]
     serializer_class = EmailLoginSchema
 
@@ -434,33 +434,27 @@ class PhoneSMSVerifyView(APIView):
         })
     
 class VerifyEmailView(APIView):
-    permission_classes = [IsAuthenticated,]
-
     def get(self, request):
-        user = request.user
         token = request.GET.get('token')
-
-        if user.email_verified:
-            return generate_error_response({
-                "error_type": "invalid_request",
-                "status": 400,
-                "detail": "Email is already verified.",
-            })
 
         if not token:
             return generate_error_response({
-                "error_type": "invalid_request",
+                "errors": {
+                    "token": "This field is required.",
+                },
                 "status": 400,
-                "detail": "Token is required.",
+                "data": "Token is required.",
             })
         
         # verify that token is uuid
 
         if not validate_uuid4(token):
             return generate_error_response({
-                "error_type": "invalid_token",
+                "errors": {
+                    "token": "The provided token is not valid!",
+                },
                 "status": 400,
-                "detail": "The provided token is not valid!",
+                "message": "The provided token is not valid!",
             })
         
         email_verification_token = EmailVerificationToken.objects.filter(
@@ -474,32 +468,48 @@ class VerifyEmailView(APIView):
                 "status": 400,
                 "detail": "The provided token is not valid!",
             })
+        
+        user = email_verification_token.user
+
+        if user.email_verified:
+            return generate_error_response({
+                "error_type": "invalid_request",
+                "status": 400,
+                "detail": "Email is already verified.",
+            })
 
         user.email_verified = True
         user.email_verified_at = timezone.now()
 
         email_address = EmailAddress.objects.filter(
-            user=user,
             email=user.email,
         ).first()
 
         if not email_address:
-            EmailAddress.objects.create(
+            email_address = EmailAddress.objects.create(
                 user=user,
                 email=user.email,
                 verified=True,
                 primary=True,
             )
-        else:
-            email_address.verified = True
-            email_address.save()
 
+        email_address.verified = True
+        email_address.save()
 
-        asyncio.run(user.asave())
+        # delete all users with this email that are not verified
+
+        user.save()
+
+        asyncio.run(User.objects.exclude(
+            id=user.id,
+        ).filter(
+            email=user.email,
+        ).adelete())
+
         asyncio.run(email_verification_token.adelete())
 
         return generate_success_response({
-            "detail": "Email verified successfully.",
+            "message": "Email verified successfully.",
         })
     
 class CallUserWithCodeView(APIView):

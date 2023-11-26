@@ -49,7 +49,7 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    
+
     'dj_rest_auth',
     # Cors
     'corsheaders',
@@ -293,4 +293,4 @@ REST_AUTH_REGISTER_SERIALIZERS = {
 }
 
 FRONTEND_URL = env('FRONTEND_URL', default='http://localhost:3000')
-VERIFY_EMAIL_URL = FRONTEND_URL + '/verify-email'
+VERIFY_EMAIL_URL = 'http://localhost:8000' + '/users/email/verify/'

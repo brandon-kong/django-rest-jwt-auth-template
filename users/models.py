@@ -74,3 +74,7 @@ class EmailVerificationToken(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='email_verification_tokens')
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField(default=get_email_verification_token_expiry)
+
+
+# User create signal
+
