@@ -14,10 +14,10 @@ from uuid import UUID
 response_types = TypedDict(
     'response_types',
    {
-       "status_code": int,
-        "error_type": str,
-        "error_message": str,
-        "detail": dict,
+       "status": int,
+        "errors": str,
+        "message": str,
+        "data": dict,
     }
 )
 
@@ -55,21 +55,23 @@ http_status_codes = {
     500: HTTP_500_INTERNAL_SERVER_ERROR,
 }
 
-def generate_error_response(info: response_types):
+def generate_error_response(info: response_types) -> Response:
     return Response({
-        "detail": info.get('detail'),
-        "status_code": info.get('status_code'),
-        "error_type": info.get('error_type'),
-        "error_message": error_types[info.get('error_type')],
-    }, status=http_status_codes.get(info.get('status_code')) or HTTP_500_INTERNAL_SERVER_ERROR)
+        "data": info.get('data'),
+        "status": info.get('status'),
+        "errors": info.get('errors'),
+        "message": info.get('message'),
+    }, status=http_status_codes.get(info.get('status')) or HTTP_500_INTERNAL_SERVER_ERROR)
 
-def generate_success_response(info: response_types):
+def generate_success_response(info: response_types) -> Response:
     return Response({
-        "detail": info.get('detail'),
-         "status_code": info.get('status_code') or 200,
+        "data": info.get('data'),
+        "message": info.get('message'),
+        "errors": [],
+        "status": info.get('status') or 200,
     }, status=HTTP_200_OK)
 
-def validate_uuid4(uuid_string):
+def validate_uuid4(uuid_string) -> bool:
     try:
         val = UUID(uuid_string, version=4)
     except ValueError:

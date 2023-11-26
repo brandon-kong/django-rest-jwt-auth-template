@@ -84,8 +84,8 @@ class EmailRegisterView(APIView):
         if not is_valid:
             return generate_error_response({
                 "error_type": "invalid_request",
-                "status_code": 400,
-                "detail": serializer.errors,
+                "status": 400,
+                "errors": serializer.errors,
             })
         
         serializer.save()
@@ -94,29 +94,31 @@ class EmailRegisterView(APIView):
 
         # generate email verification token
 
-        email_verification_token = generate_email_verification_token()
+        if (settings.SEND_EMAIL_VERIFICATION):
 
-        asyncio.run(EmailVerificationToken.objects.acreate(
-            token=email_verification_token,
-            user=serializer.instance,
-        ))
-        
-        send_email(
-            subject='Welcome to Reservation App!',
-            html_content=f'<h1>Welcome to Reservation App!</h1><p>Thank you for registering with us!</p> <p>Please verify your email by clicking <a href="{settings.VERIFY_EMAIL_URL}?token={email_verification_token}">here</a>.</p>',
-            recipient_list=[serializer.instance.email,],
-        )
+            email_verification_token = generate_email_verification_token()
+
+            asyncio.run(EmailVerificationToken.objects.acreate(
+                token=email_verification_token,
+                user=serializer.instance,
+            ))
+            
+            send_email(
+                subject='Welcome to Reservation App!',
+                html_content=f'<h1>Welcome to Reservation App!</h1><p>Thank you for registering with us!</p> <p>Please verify your email by clicking <a href="{settings.VERIFY_EMAIL_URL}?token={email_verification_token}">here</a>.</p>',
+                recipient_list=[serializer.instance.email,],
+            )
 
         if serializer.instance:
             return generate_success_response({
                 "detail": "User created successfully.",
-                "status_code": 201,
+                "status": 201,
             })
         
         
         return generate_error_response({
             "error_type": "invalid_request",
-            "status_code": 400,
+            "status": 400,
             "detail": "Bad email or password.",
         })
     
@@ -133,7 +135,7 @@ class EmailVerifyView(APIView):
         if (not is_valid):
             return generate_error_response({
             "error_type": "invalid_request",
-            "status_code": 400,
+            "status": 400,
             "detail": "Bad email or password.",
         })
         
@@ -151,7 +153,7 @@ class EmailVerifyView(APIView):
         
         return generate_error_response({
             "error_type": "invalid_request",
-            "status_code": 400,
+            "status": 400,
             "detail": "Bad email or password.",
         })
     
@@ -166,9 +168,10 @@ class GetAllUsers(APIView):
         users = User.objects.all()
         serialized_users = UserSerializer(users, many=True)
 
-        return Response({
-            "users": serialized_users.data,
-        }, status=status.HTTP_200_OK)
+        return generate_success_response({
+            "data": serialized_users.data,
+            "status": 200,
+        })
     
 class PhoneRegisterView(APIView):
     permission_classes = [AllowAny,]
@@ -184,7 +187,7 @@ class PhoneRegisterView(APIView):
         if not is_valid:
             return generate_error_response({
                 "error_type": "invalid_request",
-                "status_code": 400,
+                "status": 400,
                 "detail": serializer.errors,
             })
         
@@ -212,7 +215,7 @@ class PhoneRegisterView(APIView):
             asyncio.run(serializer.instance.asave())
             return generate_success_response({
                 "detail": "User created successfully.",
-                "status_code": 201,
+                "status": 201,
             })
         
         return Response(None, status=status.HTTP_400_BAD_REQUEST)
@@ -234,7 +237,7 @@ class PhoneVerifyView(APIView):
         if not user:
             return generate_error_response({
                 "error_type": "invalid_request",
-                "status_code": 400,
+                "status": 400,
                 "detail": "User does not exist.",
             })
         
@@ -246,7 +249,7 @@ class PhoneVerifyView(APIView):
         if not phone_token:
             return generate_error_response({
                 "error_type": "invalid_token",
-                "status_code": 400,
+                "status": 400,
                 "detail": "The provided token is not valid!",
             })
         
@@ -258,7 +261,7 @@ class PhoneVerifyView(APIView):
 
                 return generate_error_response({
                     "error_type": "token_attempts_exceeded",
-                    "status_code": 400,
+                    "status": 400,
                     "detail": "The provided token attempts exceeded!",
                 })
             
@@ -267,7 +270,7 @@ class PhoneVerifyView(APIView):
 
             return generate_error_response({
                 "error_type": "invalid_token",
-                "status_code": 400,
+                "status": 400,
                 "detail": "The provided token is not valid!",
             })
 
@@ -291,7 +294,7 @@ class EmailExistsView(APIView):
         if not email:
             return generate_error_response({
                 "error_type": "invalid_request",
-                "status_code": 400,
+                "status": 400,
                 "detail": {
                     "email": "This field is required.",
                 },
@@ -320,7 +323,7 @@ class PhoneExistsView(APIView):
         if not serializer.is_valid():
             return generate_error_response({
                 "error_type": "invalid_request",
-                "status_code": 400,
+                "status": 400,
                 "detail": serializer.errors,
             })
         
@@ -349,7 +352,7 @@ class SendPhoneSMSVerificationView(APIView):
         if not serializer.is_valid():
             return generate_error_response({
                 "error_type": "invalid_request",
-                "status_code": 400,
+                "status": 400,
                 "detail": serializer.errors,
             })
         
@@ -374,7 +377,7 @@ class SendPhoneSMSVerificationView(APIView):
         except:
             return generate_error_response({
                 "error_type": "invalid_request",
-                "status_code": 400,
+                "status": 400,
                 "detail": "Invalid phone number.",
             })
        
@@ -401,7 +404,7 @@ class PhoneSMSVerifyView(APIView):
         if not phone_token:
             return generate_error_response({
                 "error_type": "invalid_token",
-                "status_code": 400,
+                "status": 400,
                 "detail": "The provided token is not valid!",
             })
         
@@ -413,7 +416,7 @@ class PhoneSMSVerifyView(APIView):
 
                 return generate_error_response({
                     "error_type": "token_attempts_exceeded",
-                    "status_code": 400,
+                    "status": 400,
                     "detail": "The provided token attempts exceeded!",
                 })
             
@@ -422,7 +425,7 @@ class PhoneSMSVerifyView(APIView):
 
             return generate_error_response({
                 "error_type": "invalid_token",
-                "status_code": 400,
+                "status": 400,
                 "detail": "The provided token is not valid!",
             })
         
@@ -440,14 +443,14 @@ class VerifyEmailView(APIView):
         if user.email_verified:
             return generate_error_response({
                 "error_type": "invalid_request",
-                "status_code": 400,
+                "status": 400,
                 "detail": "Email is already verified.",
             })
 
         if not token:
             return generate_error_response({
                 "error_type": "invalid_request",
-                "status_code": 400,
+                "status": 400,
                 "detail": "Token is required.",
             })
         
@@ -456,7 +459,7 @@ class VerifyEmailView(APIView):
         if not validate_uuid4(token):
             return generate_error_response({
                 "error_type": "invalid_token",
-                "status_code": 400,
+                "status": 400,
                 "detail": "The provided token is not valid!",
             })
         
@@ -468,12 +471,29 @@ class VerifyEmailView(APIView):
         if not email_verification_token:
             return generate_error_response({
                 "error_type": "invalid_token",
-                "status_code": 400,
+                "status": 400,
                 "detail": "The provided token is not valid!",
             })
 
         user.email_verified = True
         user.email_verified_at = timezone.now()
+
+        email_address = EmailAddress.objects.filter(
+            user=user,
+            email=user.email,
+        ).first()
+
+        if not email_address:
+            EmailAddress.objects.create(
+                user=user,
+                email=user.email,
+                verified=True,
+                primary=True,
+            )
+        else:
+            email_address.verified = True
+            email_address.save()
+
 
         asyncio.run(user.asave())
         asyncio.run(email_verification_token.adelete())
@@ -493,7 +513,7 @@ class CallUserWithCodeView(APIView):
         if not serializer.is_valid():
             return generate_error_response({
                 "error_type": "invalid_request",
-                "status_code": 400,
+                "status": 400,
                 "detail": serializer.errors,
             })
         

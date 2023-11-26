@@ -11,8 +11,12 @@ from rest_framework.response import Response
 from rest_framework.status import HTTP_500_INTERNAL_SERVER_ERROR, HTTP_401_UNAUTHORIZED, HTTP_400_BAD_REQUEST, HTTP_200_OK
 
 from .models import (
-    PhoneVerificationToken,
+    PhoneToken,
     EmailVerificationToken,
+)
+
+from allauth.account.models import (
+    EmailAddress,
 )
 
 from email_validator import validate_email as email_valid, EmailNotValidError
@@ -164,3 +168,15 @@ def send_mail_message(email: str, subject: str, message: str) -> int:
         recipient_list=[email],
         fail_silently=False,
     )
+
+def user_exists_by_email(email: str) -> bool:
+    if not email:
+        return False
+    
+    return EmailAddress.objects.filter(email=email, verified=True).exists()
+
+def get_verified_user_by_email(email: str):
+    if not email:
+        return None
+    
+    return EmailAddress.objects.filter(email=email, verified=True).first().user

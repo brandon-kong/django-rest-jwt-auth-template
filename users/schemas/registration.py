@@ -9,6 +9,10 @@ from core.utils.users import (
     normalize_phone_number,
 )
 
+from users.utils import (
+    user_exists_by_email,
+)
+
 class EmailRegistrationSchema(serializers.Serializer):
     email = serializers.EmailField(required=True, allow_null=False)
     password = serializers.CharField(required=True, allow_null=False, write_only=True)
@@ -24,11 +28,12 @@ class EmailRegistrationSchema(serializers.Serializer):
             self.errors['email'] = _('Email is required.')
             raise serializers.ValidationError({
                 'email': _('Email is required.'),
-            })
+            })     
         
-        if User.objects.filter(email=data['email']).exists():
+        if (user_exists_by_email(data['email'])):
+            self.errors['email'] = _('Email already exists.')
             raise serializers.ValidationError({
-                'email': _('Email already exists.'), 
+                'email': _('Email already exists.'),
             })
 
         return data

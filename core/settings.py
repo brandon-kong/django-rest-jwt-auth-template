@@ -47,7 +47,10 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'rest_framework_simplejwt',
     'allauth',
-
+    'allauth.account',
+    'allauth.socialaccount',
+    
+    'dj_rest_auth',
     # Cors
     'corsheaders',
 
@@ -65,6 +68,8 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
     'silk.middleware.SilkyMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -166,6 +171,12 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
+
+    "DEFAULT_RENDERER_CLASSES": [
+        "core.utils.renderers.CustomJSONRenderer",
+        "rest_framework.renderers.JSONRenderer",
+        "rest_framework.renderers.BrowsableAPIRenderer",
+    ],
 }
 
 
@@ -216,6 +227,8 @@ EMAIL_USE_TLS = env('SMTP_TLS', default=True)
 EMAIL_BACKEND = env('EMAIL_BACKEND', default='django.core.mail.backends.smtp.EmailBackend')
 
 EMAIL_VERIFICATION_TOKEN_EXPIRY = timedelta(days=1)
+
+SEND_EMAIL_VERIFICATION = env('SEND_EMAIL_VERIFICATION', default=False)
 
 # CORS
 
